@@ -106,17 +106,22 @@ module OpenURI
       #   Returns 1 if a cached value was invalidated, false otherwise
       def invalidate(key, time = Time.now)
         filename = filename_from_url(key)
-        File.delete(filename) if File.stat(filename).mtime < time
+        filename_meta = "#{filename}.meta"
+       
+        if File.stat(filename).mtime < time
+          File.delete(filename) if File.exists?(filename)
+          File.delete(filename_meta) if File.exists?(filename_meta)
+        end
       rescue Errno::ENOENT
         false
       end
 
-      protected
-        def filename_from_url(url)
-          uri = URI.parse(url) # TODO: rescue here?
-          [ @cache_path, uri.host, Digest::SHA1.hexdigest(url) ].join('/')
-        end
+      def filename_from_url(url)
+        uri = URI.parse(url) # TODO: rescue here?
+        [ @cache_path, uri.host, Digest::SHA1.hexdigest(url) ].join('/')
+      end
 
+      protected
         def mkpath(path)
           full = []
           dirs = path.split('/'); dirs.pop
